@@ -1,7 +1,5 @@
 
-#define ADC_ONESHOT_FORCE_USE_ADC2_ON_C3 true
-
-const int flx = 5;
+const int flx = D3;
 const int s2 = D0;
 const int s1 = D1;
 const int s0 = D2; 
@@ -9,13 +7,15 @@ const int s0 = D2;
 void flex_setup() {
   
   pinMode(flx, INPUT);  // declare the sensorPin as an INPUT
-  pinMode(s2, OUTPUT);   // declare the ledPin as an OUTPUT
+  pinMode(s2, OUTPUT);   
   pinMode(s1, OUTPUT);
   pinMode(s0, OUTPUT);
 
-  set_selector(1, s0, s1, s2);
 
-  Serial.begin(115200);
+  set_selector(4, s0, s1, s2);
+  analogReadResolution(14);
+
+  Serial.begin(9600);
   while (!Serial);
 }
 
