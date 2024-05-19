@@ -1,8 +1,11 @@
+#include <bluefruit.h>
 
 const int flx = D3;
 const int s2 = D0;
 const int s1 = D1;
 const int s0 = D2; 
+
+BLEUart bleuartr; // uart over ble
 
 void flex_setup() {
   
@@ -24,6 +27,10 @@ void flex_loop() {
   int sensorValue = analogRead(flx);
 
   Serial.println(sensorValue);
+
+  send_flex(sensorValue);
+
+  delay(50);
 }
 
 void set_selector(int pin, int s0, int s1, int s2) {

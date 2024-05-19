@@ -15,6 +15,14 @@
 #include <Adafruit_LittleFS.h>
 #include <InternalFileSystem.h>
 
+
+// Create the custom flex sensor service
+BLEService flexSensorService = BLEService(UUID16_SVC_HUMAN_INTERFACE_DEVICE); // 0x1812
+
+// Create the custom flex sensor characteristic
+BLECharacteristic flexChar = BLECharacteristic(UUID16_CHR_BODY_SENSOR_LOCATION); // 0x2A38
+
+
 // BLE Service
 BLEDfu  bledfu;  // OTA DFU service
 BLEDis  bledis;  // device information
@@ -60,15 +68,25 @@ void ble_setup()
   // Configure and Start BLE Uart Service
   bleuart.begin();
 
+
   // Start BLE Battery Service
   blebas.begin();
   blebas.write(100);
 
+  // Configure and Start the custom flex sensor service
+  flexSensorService.begin();
+
+  flexChar.setProperties(CHR_PROPS_READ);
+  flexChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  flexChar.setMaxLen(8);
+  flexChar.begin();
+  flexChar.write8(0);
+
+
   // Set up and start advertising
+  
   startAdv();
 
-  Serial.println("Please use Adafruit's Bluefruit LE app to connect in UART mode");
-  Serial.println("Once connected, enter character(s) that you wish to send");
 }
 
 void startAdv(void)
@@ -78,7 +96,9 @@ void startAdv(void)
   Bluefruit.Advertising.addTxPower();
 
   // Include bleuart 128-bit uuid
-  Bluefruit.Advertising.addService(bleuart);
+  //Bluefruit.Advertising.addService(bleuart);
+
+  Bluefruit.Advertising.addService(flexSensorService);
   
   // Secondary Scan Response packet (optional)
   // Since there is no room for 'Name' in Advertising packet
@@ -97,6 +117,19 @@ void startAdv(void)
   Bluefruit.Advertising.setInterval(32, 244);    // in unit of 0.625 ms
   Bluefruit.Advertising.setFastTimeout(30);      // number of seconds in fast mode
   Bluefruit.Advertising.start(0);                // 0 = Don't stop advertising after n seconds  
+}
+
+void send_flex(int flex){
+  // Convert the 14-bit value to a 16-bit unsigned integer
+  uint16_t flexValue = (uint16_t)flex;
+
+  // Create a byte array to store the 16-bit value
+  uint8_t flexData[2];
+  flexData[0] = (uint8_t)(flexValue & 0xFF);  // Low byte
+  flexData[1] = (uint8_t)(flexValue >> 8);    // High byte
+
+  // Notify the connected client about the flex value
+  flexChar.notify(flexData, 2);
 }
 
 void ble_loop()
