@@ -17,10 +17,10 @@
 
 
 // Create the custom flex sensor service
-BLEService flexSensorService = BLEService(UUID16_SVC_HUMAN_INTERFACE_DEVICE); // 0x1812
+BLEService flexSensorService = BLEService(0x2222); // 0x1812
 
 // Create the custom flex sensor characteristic
-BLECharacteristic flexChar = BLECharacteristic(UUID16_CHR_UNSPECIFIED); // 0x2ACA
+BLECharacteristic flexChar = BLECharacteristic(UUID16_CHR_GENERIC_LEVEL); // 0x2AF9
 
 
 // BLE Service
@@ -52,7 +52,7 @@ void ble_setup()
 
   Bluefruit.begin();
   Bluefruit.setName("Ruka");
-  Bluefruit.setTxPower(4);    // Check bluefruit.h for supported values
+  Bluefruit.setTxPower(8);    // Check bluefruit.h for supported values
   //Bluefruit.setName(getMcuUniqueID()); // useful testing with multiple central connections
   Bluefruit.Periph.setConnectCallback(connect_callback);
   Bluefruit.Periph.setDisconnectCallback(disconnect_callback);
@@ -77,8 +77,9 @@ void ble_setup()
   flexSensorService.begin();
 
   flexChar.setProperties(CHR_PROPS_READ);
-  flexChar.setPermission(SECMODE_OPEN, SECMODE_OPEN);
-  flexChar.setMaxLen(8);
+  flexChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  flexChar.setMaxLen(2);
+  flexChar.setUserDescriptor("flex");
   flexChar.begin();
   // flexChar.write8(0);
 
@@ -125,13 +126,13 @@ void send_flex(int flex){
 
   // Create a byte array to store the 16-bit value
   uint8_t flexData[2];
-  flexData[0] = (uint8_t)(flexValue & 0xFF);  // Low byte
-  flexData[1] = (uint8_t)(flexValue >> 8);    // High byte
+  flexData[0] = (uint8_t)(flexValue >> 6);    // High byte (8 most significant bits)
+  flexData[1] = (uint8_t)(flexValue & 0x3F);  // Low byte (6 least significant bits)
 
-  flexChar.write16(flexValue);
-
+  // Send the flex sensor value as a byte array
+  flexChar.write(flexData, sizeof(flexData));
   // Notify the connected client about the flex value
-  //flexChar.notify16(flexValue);
+  //flexChar.notify(flexData, sizeof(flexData));
 }
 
 void ble_loop()

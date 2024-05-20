@@ -5,6 +5,14 @@ const int s2 = D0;
 const int s1 = D1;
 const int s0 = D2; 
 
+const int WINDOW_SIZE = 10; // Adjust the window size as needed
+int sensorReadings[WINDOW_SIZE];
+int readIndex = 0;
+int total = 0;
+
+int flx_bottom = 16383;
+int flx_top = 0;
+
 BLEUart bleuartr; // uart over ble
 
 void flex_setup() {
@@ -26,9 +34,22 @@ void flex_loop() {
   // read the value from the sensor:
   int sensorValue = analogRead(flx);
 
-  Serial.println(sensorValue);
+  // Subtract the oldest reading from the total
+  total -= sensorReadings[readIndex];
 
-  send_flex(sensorValue);
+  // Add the new reading to the total and store it in the array
+  total += sensorValue;
+  sensorReadings[readIndex] = sensorValue;
+
+  // Increment the read index and wrap around if necessary
+  readIndex = (readIndex + 1) % WINDOW_SIZE;
+
+  // Calculate the average sensor value
+  int averageValue = total / WINDOW_SIZE;
+
+  // Send the average sensor value
+  Serial.println(averageValue);
+  send_flex(averageValue);
 
   delay(50);
 }
