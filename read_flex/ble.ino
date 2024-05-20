@@ -20,7 +20,7 @@
 BLEService flexSensorService = BLEService(UUID16_SVC_HUMAN_INTERFACE_DEVICE); // 0x1812
 
 // Create the custom flex sensor characteristic
-BLECharacteristic flexChar = BLECharacteristic(UUID16_CHR_BODY_SENSOR_LOCATION); // 0x2A38
+BLECharacteristic flexChar = BLECharacteristic(UUID16_CHR_UNSPECIFIED); // 0x2ACA
 
 
 // BLE Service
@@ -77,10 +77,10 @@ void ble_setup()
   flexSensorService.begin();
 
   flexChar.setProperties(CHR_PROPS_READ);
-  flexChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  flexChar.setPermission(SECMODE_OPEN, SECMODE_OPEN);
   flexChar.setMaxLen(8);
   flexChar.begin();
-  flexChar.write8(0);
+  // flexChar.write8(0);
 
 
   // Set up and start advertising
@@ -96,7 +96,7 @@ void startAdv(void)
   Bluefruit.Advertising.addTxPower();
 
   // Include bleuart 128-bit uuid
-  //Bluefruit.Advertising.addService(bleuart);
+  Bluefruit.Advertising.addService(bleuart);
 
   Bluefruit.Advertising.addService(flexSensorService);
   
@@ -128,8 +128,10 @@ void send_flex(int flex){
   flexData[0] = (uint8_t)(flexValue & 0xFF);  // Low byte
   flexData[1] = (uint8_t)(flexValue >> 8);    // High byte
 
+  flexChar.write16(flexValue);
+
   // Notify the connected client about the flex value
-  flexChar.notify(flexData, 2);
+  //flexChar.notify16(flexValue);
 }
 
 void ble_loop()
