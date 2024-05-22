@@ -15,6 +15,29 @@ int flx_top = 0;
 
 BLEUart bleuartr; // uart over ble
 
+class ExponentialFilter {
+private:
+  float alpha;
+  float filteredValue;
+
+public:
+  ExponentialFilter(float alpha, float initialValue) {
+    this->alpha = alpha;
+    this->filteredValue = initialValue;
+  }
+
+  float filter(float rawValue) {
+    filteredValue = alpha * rawValue + (1 - alpha) * filteredValue;
+    return filteredValue;
+  }
+
+  float getCurrentValue() {
+    return filteredValue;
+  }
+};
+
+ExponentialFilter flexFilter(0.05, 0);
+
 void flex_setup() {
   
   pinMode(flx, INPUT);  // declare the sensorPin as an INPUT
@@ -32,24 +55,14 @@ void flex_setup() {
 
 void flex_loop() {
   // read the value from the sensor:
-  int sensorValue = analogRead(flx);
+  int raw = analogRead(flx);
 
-  // Subtract the oldest reading from the total
-  total -= sensorReadings[readIndex];
+  // int smooth = flexFilter.filter(raw);
+  int smooth = raw;
 
-  // Add the new reading to the total and store it in the array
-  total += sensorValue;
-  sensorReadings[readIndex] = sensorValue;
-
-  // Increment the read index and wrap around if necessary
-  readIndex = (readIndex + 1) % WINDOW_SIZE;
-
-  // Calculate the average sensor value
-  int averageValue = total / WINDOW_SIZE;
-
-  // Send the average sensor value
-  Serial.println(averageValue);
-  send_flex(averageValue);
+  // Send the average sensor vWalue
+  Serial.println(smooth);
+  send_flex(smooth);
 
   delay(50);
 }
@@ -98,4 +111,5 @@ void set_selector(int pin, int s0, int s1, int s2) {
       break;
   }
 }
+
 
