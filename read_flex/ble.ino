@@ -78,7 +78,7 @@ void ble_setup()
 
   flexChar.setProperties(CHR_PROPS_READ);
   flexChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
-  flexChar.setMaxLen(2);
+  flexChar.setMaxLen(10);
   flexChar.setUserDescriptor("flex");
   flexChar.begin();
   // flexChar.write8(0);
@@ -120,14 +120,16 @@ void startAdv(void)
   Bluefruit.Advertising.start(0);                // 0 = Don't stop advertising after n seconds  
 }
 
-void send_flex(int flex){
+void send_flex(int flexVals[], int num){
   // Convert the 14-bit value to a 16-bit unsigned integer
-  uint16_t flexValue = (uint16_t)flex;
+  uint16_t flexData[num * 2];
 
   // Create a byte array to store the 16-bit value
-  uint8_t flexData[2];
-  flexData[0] = (uint8_t)(flexValue >> 6);    // High byte (8 most significant bits)
-  flexData[1] = (uint8_t)(flexValue & 0x3F);  // Low byte (6 least significant bits)
+  for (int i = 0; i < num; i++) {
+    uint16_t flexValue = (uint16_t)flexValues[i];
+    flexData[i * 2] = (uint8_t)(flexValue >> 8);     // High byte
+    flexData[i * 2 + 1] = (uint8_t)(flexValue & 0xFF);  // Low byte
+  }
 
   // Send the flex sensor value as a byte array
   flexChar.write(flexData, sizeof(flexData));
