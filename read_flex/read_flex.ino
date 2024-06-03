@@ -1,6 +1,11 @@
 #include <bluefruit.h>
 
-const int flx = D3;
+const int flx1 = D1;
+const int flx2 = D2;
+const int flx3 = D3;
+const int flx4 = D4;
+const int flx5 = D5;
+
 const int s2 = D0;
 const int s1 = D1;
 const int s0 = D2; 
@@ -39,8 +44,11 @@ public:
 ExponentialFilter flexFilter(0.05, 0);
 
 void flex_setup() {
-  
-  pinMode(flx, INPUT);  // declare the sensorPin as an INPUT
+  pinMode(flx1, INPUT);
+  pinMode(flx2, INPUT);
+  pinMode(flx3, INPUT);
+  pinMode(flx4, INPUT);
+  pinMode(flx5, INPUT);  
   pinMode(s2, OUTPUT);   
   pinMode(s1, OUTPUT);
   pinMode(s0, OUTPUT);
@@ -55,7 +63,7 @@ void flex_setup() {
 
 void flex_loop() {
   // read the value from the sensor:
-  int raw = analogRead(flx);
+  int raw = analogRead(flx1);
 
   // int smooth = flexFilter.filter(raw);
   int smooth = raw;
