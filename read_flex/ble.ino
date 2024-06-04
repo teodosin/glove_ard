@@ -126,7 +126,7 @@ void send_flex(int flexVals[], int num){
 
   // Create a byte array to store the 16-bit value
   for (int i = 0; i < num; i++) {
-    uint16_t flexValue = (uint16_t)flexValues[i];
+    uint16_t flexValue = (uint16_t)flexVals[i];
     flexData[i * 2] = (uint8_t)(flexValue >> 8);     // High byte
     flexData[i * 2 + 1] = (uint8_t)(flexValue & 0xFF);  // Low byte
   }

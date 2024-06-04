@@ -1,10 +1,11 @@
+
 #include <bluefruit.h>
 
 const int flx1 = D1;
 const int flx2 = D2;
-const int flx3 = D3;
+const int flx3 = D5;
 const int flx4 = D4;
-const int flx5 = D5;
+const int flx5 = D3;
 
 const int flexPins[5] = {flx1, flx2, flx3, flx4, flx5};
 
@@ -43,7 +44,14 @@ public:
   }
 };
 
-ExponentialFilter flexFilter(0.05, 0);
+const float FILTER_ALPHA = 0.5;
+ExponentialFilter flexFilters[5] = {
+  ExponentialFilter(FILTER_ALPHA, 0),
+  ExponentialFilter(FILTER_ALPHA, 0),
+  ExponentialFilter(FILTER_ALPHA, 0),
+  ExponentialFilter(FILTER_ALPHA, 0),
+  ExponentialFilter(FILTER_ALPHA, 0)
+};
 
 void flex_setup() {
   for (int i = 0; i < 5; i++) {
@@ -61,10 +69,10 @@ void flex_loop() {
   int flexVals[5];
 
   for (int i = 0; i < 5; i++) {
-    int val = analogRead(flexPins[i]);
-    int val = flexFilter.filter(val);
+    int valr = analogRead(flexPins[i]);
+    int val = flexFilters[i].filter(valr);
     flexVals[i] = val;
-    Serial.print(flexVals[i]);
+    Serial.print(flexPins[i]);
     Serial.print(": ");
     Serial.println(val);
   }
