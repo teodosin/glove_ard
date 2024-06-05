@@ -69,9 +69,6 @@ void flex_loop() {
     int valr = analogRead(flexPins[i]);
     int val = flexFilters[i].filter(valr);
     flexVals[i] = val;
-    Serial.print(flexPins[i]);
-    Serial.print(": ");
-    Serial.println(val);
   }
   
   send_flex(flexVals, 5);

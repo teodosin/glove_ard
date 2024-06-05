@@ -127,8 +127,15 @@ void startAdv(void)
 }
 
 void send_flex(int flexVals[], int num){
+  Serial.print("Raw flex values: ");
+  for (int i = 0; i < sizeof(flexVals); i++){
+    Serial.print(flexVals[i]);
+    Serial.print(" | ");
+  }
+  Serial.println("");
+
   // Convert the 14-bit value to a 16-bit unsigned integer
-  uint16_t flexData[num * 2];
+  uint8_t flexData[num * 2];
 
   // Create a byte array to store the 16-bit value
   for (int i = 0; i < num; i++) {
@@ -137,10 +144,39 @@ void send_flex(int flexVals[], int num){
     flexData[i * 2 + 1] = (uint8_t)(flexValue & 0xFF);  // Low byte
   }
 
+  Serial.print("Converted flex values: ");
+  for (int i = 0; i < sizeof(flexData); i++){
+    Serial.print(flexData[i]);
+    Serial.print(" | ");
+
+  }
+  Serial.println("");
+
   // Send the flex sensor value as a byte array
   flexChar.write(flexData, sizeof(flexData));
   // Notify the connected client about the flex value
   //flexChar.notify(flexData, sizeof(flexData));
+
+  uint16_t backConverted[num];
+  for (int i = 0; i < num; i++){
+    uint16_t value = (uint16_t)((flexData[i * 2] << 8) | flexData[i * 2 + 1]);
+    backConverted[i] = value;
+  }
+  Serial.print("Backconverted: ");
+  for (int i = 0; i < sizeof(backConverted); i++){
+    Serial.print(backConverted[i]);
+    Serial.print(" | ");
+  }
+  Serial.println("");
+
+  bool validConversion = true;
+  for (int i = 0; i < num; i++){
+    if (flexVals[i] != backConverted[i]){
+      validConversion = false;
+    }
+  }
+  Serial.print("same conversion: ");
+  Serial.println(validConversion);
 }
 
 void send_imu(float imuVals[]){
