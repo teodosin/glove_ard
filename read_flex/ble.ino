@@ -17,10 +17,13 @@
 
 
 // Create the custom flex sensor service
-BLEService flexSensorService = BLEService(0x2222); // 0x1812
+BLEService rukaService = BLEService(0x2222); // 0x1812
 
 // Create the custom flex sensor characteristic
 BLECharacteristic flexChar = BLECharacteristic(UUID16_CHR_GENERIC_LEVEL); // 0x2AF9
+
+// Create the imu characteristic
+BLECharacteristic imuChar = BLECharacteristic(UUID16_UNIT_ACCELERATION_METRES_PER_SECOND_SQUARED); //0x2713
 
 
 // BLE Service
@@ -35,9 +38,6 @@ void ble_setup()
   // Blocking wait for connection when debug mode is enabled via IDE
   while ( !Serial ) yield();
 #endif
-  
-  Serial.println("Bluefruit52 BLEUART Example");
-  Serial.println("---------------------------\n");
 
 
   // Setup the BLE LED to be enabled on CONNECT
@@ -74,7 +74,7 @@ void ble_setup()
   blebas.write(100);
 
   // Configure and Start the custom flex sensor service
-  flexSensorService.begin();
+  rukaService.begin();
 
   flexChar.setProperties(CHR_PROPS_READ);
   flexChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
@@ -82,6 +82,12 @@ void ble_setup()
   flexChar.setUserDescriptor("flex");
   flexChar.begin();
   // flexChar.write8(0);
+
+  imuChar.setProperties(CHR_PROPS_READ);
+  imuChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  imuChar.setMaxLen(12);
+  imuChar.setUserDescriptor("imu");
+  imuChar.begin();
 
 
   // Set up and start advertising
@@ -99,7 +105,7 @@ void startAdv(void)
   // Include bleuart 128-bit uuid
   Bluefruit.Advertising.addService(bleuart);
 
-  Bluefruit.Advertising.addService(flexSensorService);
+  Bluefruit.Advertising.addService(rukaService);
   
   // Secondary Scan Response packet (optional)
   // Since there is no room for 'Name' in Advertising packet
@@ -135,6 +141,18 @@ void send_flex(int flexVals[], int num){
   flexChar.write(flexData, sizeof(flexData));
   // Notify the connected client about the flex value
   //flexChar.notify(flexData, sizeof(flexData));
+}
+
+void send_imu(float imuVals[]){
+  uint8_t imuData[12];
+
+  for (int i = 0; i < sizeof(imuVals); i++){
+    uint16_t intValue = static_cast<uint16_t>(imuVals[i] * 100); // Multiply by 100 to preserve 2 decimal places
+    imuData[i * 2] = static_cast<uint8_t>(intValue >> 8);       // High byte
+    imuData[i * 2 + 1] = static_cast<uint8_t>(intValue & 0xFF); // Low byte
+  }
+
+  imuChar.write(imuData, sizeof(imuData));
 }
 
 void ble_loop()

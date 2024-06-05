@@ -41,6 +41,9 @@ void imu_loop() {
     gx = myIMU.readFloatGyroX();
     gy = myIMU.readFloatGyroY();
     gz = myIMU.readFloatGyroZ();
+
+    float imuData[] = {ax, ay, az, gx, gy, gz};
+    send_imu(imuData);
     
     // Convert gyroscope readings from degrees per second to radians per second
     //gx *= 0.0174533;
