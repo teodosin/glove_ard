@@ -59,9 +59,6 @@ void flex_setup() {
   }
 
   analogReadResolution(14);
-
-  Serial.begin(9600);
-  while (!Serial);
 }
 
 void flex_loop() {
