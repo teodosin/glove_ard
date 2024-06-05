@@ -188,14 +188,12 @@ void send_imu(float imuVals[], int num) {
   Serial.println("");
 
   // Convert the float values to pairs of bytes
-  uint8_t imuData[num * 4];
+  uint8_t imuData[num * 2];
 
   for (int i = 0; i < num; i++) {
-    uint32_t intValue = static_cast<uint32_t>(imuVals[i] * 10000); // Multiply by 10000 to preserve 4 decimal places
-    imuData[i * 4] = static_cast<uint8_t>(intValue >> 24);         // Highest byte
-    imuData[i * 4 + 1] = static_cast<uint8_t>(intValue >> 16);     // Second highest byte
-    imuData[i * 4 + 2] = static_cast<uint8_t>(intValue >> 8);      // Second lowest byte
-    imuData[i * 4 + 3] = static_cast<uint8_t>(intValue & 0xFF);    // Lowest byte
+    uint16_t intValue = static_cast<uint16_t>(imuVals[i] * 100); // Multiply by 100 to preserve 2 decimal places
+    imuData[i * 2] = static_cast<uint8_t>(intValue >> 8);        // High byte
+    imuData[i * 2 + 1] = static_cast<uint8_t>(intValue & 0xFF);  // Low byte
   }
 
   Serial.print("Converted IMU values: ");
@@ -211,8 +209,8 @@ void send_imu(float imuVals[], int num) {
   // Convert the byte pairs back to float values
   float backConverted[num];
   for (int i = 0; i < num; i++) {
-    uint32_t intValue = (uint32_t)((imuData[i * 4] << 24) | (imuData[i * 4 + 1] << 16) | (imuData[i * 4 + 2] << 8) | imuData[i * 4 + 3]);
-    backConverted[i] = static_cast<float>(intValue) / 10000.0; // Divide by 10000 to restore the original float value
+    uint16_t intValue = (uint16_t)((imuData[i * 2] << 8) | imuData[i * 2 + 1]);
+    backConverted[i] = static_cast<float>(intValue) / 100.0; // Divide by 100 to restore the original float value
   }
 
   Serial.print("Back-converted IMU values: ");
@@ -224,7 +222,7 @@ void send_imu(float imuVals[], int num) {
 
   bool validConversion = true;
   for (int i = 0; i < num; i++) {
-    if (abs(imuVals[i] - backConverted[i]) > 0.0001) { // Allow a small tolerance for floating-point comparison
+    if (abs(imuVals[i] - backConverted[i]) > 0.01) { // Allow a small tolerance for floating-point comparison
       validConversion = false;
       break;
     }
