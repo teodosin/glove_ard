@@ -188,28 +188,28 @@ void send_imu(float imuVals[], int num) {
   Serial.println("");
 
   // Convert the float values to pairs of bytes
-  uint8_t imuData[num * 2];
+  int8_t imuData[num * 2];
 
   for (int i = 0; i < num; i++) {
-    uint16_t intValue = static_cast<uint16_t>(imuVals[i] * 100); // Multiply by 100 to preserve 2 decimal places
-    imuData[i * 2] = static_cast<uint8_t>(intValue >> 8);        // High byte
-    imuData[i * 2 + 1] = static_cast<uint8_t>(intValue & 0xFF);  // Low byte
+    int16_t intValue = static_cast<int16_t>(imuVals[i] * 100); // Multiply by 100 to preserve 2 decimal places
+    imuData[i * 2] = static_cast<int8_t>(intValue >> 8);        // High byte
+    imuData[i * 2 + 1] = static_cast<int8_t>(intValue & 0xFF);  // Low byte
   }
 
   Serial.print("Converted IMU values: ");
   for (int i = 0; i < sizeof(imuData); i++) {
-    Serial.print(imuData[i]);
+    Serial.print(static_cast<int16_t>(imuData[i]));
     Serial.print(" | ");
   }
   Serial.println("");
 
   // Send the IMU values as a byte array
-  imuChar.write(imuData, sizeof(imuData));
+  imuChar.write(reinterpret_cast<uint8_t*>(imuData), sizeof(imuData));
 
   // Convert the byte pairs back to float values
   float backConverted[num];
   for (int i = 0; i < num; i++) {
-    uint16_t intValue = (uint16_t)((imuData[i * 2] << 8) | imuData[i * 2 + 1]);
+    int16_t intValue = (int16_t)((imuData[i * 2] << 8) | (imuData[i * 2 + 1] & 0xFF));
     backConverted[i] = static_cast<float>(intValue) / 100.0; // Divide by 100 to restore the original float value
   }
 
@@ -230,6 +230,7 @@ void send_imu(float imuVals[], int num) {
   Serial.print("Valid conversion: ");
   Serial.println(validConversion);
 }
+  
 
 void ble_loop()
 {
