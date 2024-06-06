@@ -5,6 +5,7 @@ void setup()
   Serial.begin(115200);
 
   flex_setup();
+  imu_setup();
   ble_setup();
 }
 
@@ -32,5 +33,6 @@ void loop()
   }
   
   flex_loop();
+  imu_loop();
 }
 

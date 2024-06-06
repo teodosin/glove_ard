@@ -17,10 +17,13 @@
 
 
 // Create the custom flex sensor service
-BLEService flexSensorService = BLEService(0x2222); // 0x1812
+BLEService rukaService = BLEService(0x2222); // 0x1812
 
 // Create the custom flex sensor characteristic
 BLECharacteristic flexChar = BLECharacteristic(UUID16_CHR_GENERIC_LEVEL); // 0x2AF9
+
+// Create the imu characteristic
+BLECharacteristic imuChar = BLECharacteristic(UUID16_UNIT_ACCELERATION_METRES_PER_SECOND_SQUARED); //0x2713
 
 
 // BLE Service
@@ -35,9 +38,6 @@ void ble_setup()
   // Blocking wait for connection when debug mode is enabled via IDE
   while ( !Serial ) yield();
 #endif
-  
-  Serial.println("Bluefruit52 BLEUART Example");
-  Serial.println("---------------------------\n");
 
 
   // Setup the BLE LED to be enabled on CONNECT
@@ -74,14 +74,20 @@ void ble_setup()
   blebas.write(100);
 
   // Configure and Start the custom flex sensor service
-  flexSensorService.begin();
+  rukaService.begin();
 
   flexChar.setProperties(CHR_PROPS_READ);
   flexChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
-  flexChar.setMaxLen(2);
+  flexChar.setMaxLen(10);
   flexChar.setUserDescriptor("flex");
   flexChar.begin();
   // flexChar.write8(0);
+
+  imuChar.setProperties(CHR_PROPS_READ);
+  imuChar.setPermission(SECMODE_OPEN, SECMODE_NO_ACCESS);
+  imuChar.setMaxLen(12);
+  imuChar.setUserDescriptor("imu");
+  imuChar.begin();
 
 
   // Set up and start advertising
@@ -99,7 +105,7 @@ void startAdv(void)
   // Include bleuart 128-bit uuid
   Bluefruit.Advertising.addService(bleuart);
 
-  Bluefruit.Advertising.addService(flexSensorService);
+  Bluefruit.Advertising.addService(rukaService);
   
   // Secondary Scan Response packet (optional)
   // Since there is no room for 'Name' in Advertising packet
@@ -120,20 +126,111 @@ void startAdv(void)
   Bluefruit.Advertising.start(0);                // 0 = Don't stop advertising after n seconds  
 }
 
-void send_flex(int flex){
+void send_flex(int flexVals[], int num){
+  Serial.print("Raw flex values: ");
+  for (int i = 0; i < sizeof(flexVals); i++){
+    Serial.print(flexVals[i]);
+    Serial.print(" | ");
+  }
+  Serial.println("");
+
   // Convert the 14-bit value to a 16-bit unsigned integer
-  uint16_t flexValue = (uint16_t)flex;
+  uint8_t flexData[num * 2];
 
   // Create a byte array to store the 16-bit value
-  uint8_t flexData[2];
-  flexData[0] = (uint8_t)(flexValue >> 6);    // High byte (8 most significant bits)
-  flexData[1] = (uint8_t)(flexValue & 0x3F);  // Low byte (6 least significant bits)
+  for (int i = 0; i < num; i++) {
+    uint16_t flexValue = (uint16_t)flexVals[i];
+    flexData[i * 2] = (uint8_t)(flexValue >> 8);     // High byte
+    flexData[i * 2 + 1] = (uint8_t)(flexValue & 0xFF);  // Low byte
+  }
+
+  Serial.print("Converted flex values: ");
+  for (int i = 0; i < sizeof(flexData); i++){
+    Serial.print(flexData[i]);
+    Serial.print(" | ");
+
+  }
+  Serial.println("");
 
   // Send the flex sensor value as a byte array
   flexChar.write(flexData, sizeof(flexData));
   // Notify the connected client about the flex value
   //flexChar.notify(flexData, sizeof(flexData));
+
+  uint16_t backConverted[num];
+  for (int i = 0; i < num; i++){
+    uint16_t value = (uint16_t)((flexData[i * 2] << 8) | flexData[i * 2 + 1]);
+    backConverted[i] = value;
+  }
+  Serial.print("Backconverted: ");
+  for (int i = 0; i < sizeof(backConverted); i++){
+    Serial.print(backConverted[i]);
+    Serial.print(" | ");
+  }
+  Serial.println("");
+
+  bool validConversion = true;
+  for (int i = 0; i < num; i++){
+    if (flexVals[i] != backConverted[i]){
+      validConversion = false;
+    }
+  }
+  Serial.print("same conversion: ");
+  Serial.println(validConversion);
 }
+
+void send_imu(float imuVals[], int num) {
+  Serial.print("Raw IMU values: ");
+  for (int i = 0; i < num; i++) {
+    Serial.print(imuVals[i]);
+    Serial.print(" | ");
+  }
+  Serial.println("");
+
+  // Convert the float values to pairs of bytes
+  int8_t imuData[num * 2];
+
+  for (int i = 0; i < num; i++) {
+    int16_t intValue = static_cast<int16_t>(imuVals[i] * 100); // Multiply by 100 to preserve 2 decimal places
+    imuData[i * 2] = static_cast<int8_t>(intValue >> 8);        // High byte
+    imuData[i * 2 + 1] = static_cast<int8_t>(intValue & 0xFF);  // Low byte
+  }
+
+  Serial.print("Converted IMU values: ");
+  for (int i = 0; i < sizeof(imuData); i++) {
+    Serial.print(static_cast<int16_t>(imuData[i]));
+    Serial.print(" | ");
+  }
+  Serial.println("");
+
+  // Send the IMU values as a byte array
+  imuChar.write(reinterpret_cast<uint8_t*>(imuData), sizeof(imuData));
+
+  // Convert the byte pairs back to float values
+  float backConverted[num];
+  for (int i = 0; i < num; i++) {
+    int16_t intValue = (int16_t)((imuData[i * 2] << 8) | (imuData[i * 2 + 1] & 0xFF));
+    backConverted[i] = static_cast<float>(intValue) / 100.0; // Divide by 100 to restore the original float value
+  }
+
+  Serial.print("Back-converted IMU values: ");
+  for (int i = 0; i < num; i++) {
+    Serial.print(backConverted[i]);
+    Serial.print(" | ");
+  }
+  Serial.println("");
+
+  bool validConversion = true;
+  for (int i = 0; i < num; i++) {
+    if (abs(imuVals[i] - backConverted[i]) > 0.01) { // Allow a small tolerance for floating-point comparison
+      validConversion = false;
+      break;
+    }
+  }
+  Serial.print("Valid conversion: ");
+  Serial.println(validConversion);
+}
+  
 
 void ble_loop()
 {

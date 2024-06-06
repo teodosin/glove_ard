@@ -1,6 +1,14 @@
+
 #include <bluefruit.h>
 
-const int flx = D3;
+const int flx1 = D1;
+const int flx2 = D2;
+const int flx3 = D5;
+const int flx4 = D4;
+const int flx5 = D3;
+
+const int flexPins[5] = {flx1, flx2, flx3, flx4, flx5};
+
 const int s2 = D0;
 const int s1 = D1;
 const int s0 = D2; 
@@ -36,80 +44,36 @@ public:
   }
 };
 
-ExponentialFilter flexFilter(0.05, 0);
+const float FILTER_ALPHA = 0.5;
+ExponentialFilter flexFilters[5] = {
+  ExponentialFilter(FILTER_ALPHA, 0),
+  ExponentialFilter(FILTER_ALPHA, 0),
+  ExponentialFilter(FILTER_ALPHA, 0),
+  ExponentialFilter(FILTER_ALPHA, 0),
+  ExponentialFilter(FILTER_ALPHA, 0)
+};
 
 void flex_setup() {
-  
-  pinMode(flx, INPUT);  // declare the sensorPin as an INPUT
-  pinMode(s2, OUTPUT);   
-  pinMode(s1, OUTPUT);
-  pinMode(s0, OUTPUT);
+  for (int i = 0; i < 5; i++) {
+    pinMode(flexPins[i], INPUT);
+  }
 
-
-  set_selector(4, s0, s1, s2);
   analogReadResolution(14);
-
-  Serial.begin(9600);
-  while (!Serial);
 }
 
 void flex_loop() {
   // read the value from the sensor:
-  int raw = analogRead(flx);
+  int flexVals[5];
 
-  // int smooth = flexFilter.filter(raw);
-  int smooth = raw;
-
-  // Send the average sensor vWalue
-  Serial.println(smooth);
-  send_flex(smooth);
+  for (int i = 0; i < 5; i++) {
+    int valr = analogRead(flexPins[i]);
+    int val = flexFilters[i].filter(valr);
+    flexVals[i] = val;
+  }
+  
+  send_flex(flexVals, 5);
 
   delay(50);
-}
-
-void set_selector(int pin, int s0, int s1, int s2) {
-  switch (pin) {
-    case 0: // A0
-      digitalWrite(s2, LOW);
-      digitalWrite(s1, LOW);
-      digitalWrite(s0, LOW);
-      break;
-    case 1: // A1
-      digitalWrite(s2, LOW);
-      digitalWrite(s1, LOW);
-      digitalWrite(s0, HIGH);
-      break;
-    case 2: // A2
-      digitalWrite(s2, LOW);
-      digitalWrite(s1, HIGH);
-      digitalWrite(s0, LOW);
-      break;
-    case 3: // A3
-      digitalWrite(s2, LOW);
-      digitalWrite(s1, HIGH);
-      digitalWrite(s0, HIGH);
-      break;
-    case 4: // A4
-      digitalWrite(s2, HIGH);
-      digitalWrite(s1, LOW);
-      digitalWrite(s0, LOW);
-      break;
-    case 5: // A5
-      digitalWrite(s2, HIGH);
-      digitalWrite(s1, LOW);
-      digitalWrite(s0, HIGH);
-      break;
-    case 6: // A6
-      digitalWrite(s2, HIGH);
-      digitalWrite(s1, HIGH);
-      digitalWrite(s0, LOW);
-      break;
-    case 7: // A7
-      digitalWrite(s2, HIGH);
-      digitalWrite(s1, HIGH);
-      digitalWrite(s0, HIGH);
-      break;
-  }
 }
 
 
